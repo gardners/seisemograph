@@ -1,0 +1,15 @@
+38400 8N1 serial
+
+Kelunji(ARKL) > view signal
+                  e         n         v         X         Y         Z
+Minimum         4483      4376      3077    -78423   3428018    441073
+Mean            4496      4394      3140    -75793   3437128    446927
+Maximum         4508      4414      3184    -73263   3443660    454843
+Std dev            3         6         4       212      3690      3110
+Current         4491      4388      3137    -75995   3443073    441748
+
+
+
+The last three columns on the "current" line are the figures we want.
+We can run view signal every second and get fresh values.
+Build a PNG with second-by-second and minute-by-minute graphs.
