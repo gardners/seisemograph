@@ -78,8 +78,11 @@ int update_image(void)
   int recent_excursions[MAX_EXCURSIONS];
   int recent_excursion_count=0;
 
-  draw_text(100,100,"Test",0xffffff);
-  
+  draw_text(64,32+0*MAXY/4,"Coulthard's Lookout Seismograph.",0xffffff);
+  draw_text(64,48+0*MAXY/4,"Last 3 minutes:",0xffffff);
+  draw_text(64,0+1*MAXY/4,"Last 3 hours:",0xffffff);
+  draw_text(64,0+2*MAXY/4,"Last 24 hours:",0xffffff);
+    
   for(int s=0;s<MAX_HISTORY;s++) {
     int sn=head-s;
     if (sn<0) sn+=MAX_HISTORY;
@@ -239,6 +242,13 @@ int update_image(void)
   // Draw most recent excursion, starting 30 seconds before
   printf("Drawing excursion from T-%dsec\n",
 	 head-maxpoint);
+  char recent_msg[1024];
+  snprintf(recent_msg,1024,"Most significant trace in last 24 hours (peak %02d:%02d.%02d ago)",
+	   (head-maxpoint)/3600,
+	   ((head-maxpoint)/60)%60,
+	   (head-maxpoint)%60);
+  draw_text(64,0+3*MAXY/4,recent_msg,0xffffff);
+  
   for(int chan=0;chan<3;chan++) {
     int duration=300;
     int ylo=3*MAXY/4;
