@@ -82,6 +82,10 @@ int update_image(void)
   draw_text(64,48+0*MAXY/4,"Last 3 minutes:",0xffffff);
   draw_text(64,0+1*MAXY/4,"Last 3 hours:",0xffffff);
   draw_text(64,0+2*MAXY/4,"Last 24 hours:",0xffffff);
+  draw_text(64,-16+1*MAXY/4,"Colours are for X, Y and Z axes.",0xffffff);
+  draw_text(64+16*16,-16+1*MAXY/4,"X",0x0000ff);
+  draw_text(64+19*16,-16+1*MAXY/4,"Y",0x00ff00);
+  draw_text(64+25*16,-16+1*MAXY/4,"Z",0xff0000);
     
   for(int s=0;s<MAX_HISTORY;s++) {
     int sn=head-s;
