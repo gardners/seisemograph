@@ -35,6 +35,8 @@ void write_image(char *filename);
 ssize_t read_nonblock(int fd, void *buf, size_t len);
 ssize_t write_all(int fd, const void *buf, size_t len);
 int serial_setup_port_with_speed(int fd,int speed);
+void read_png_file(char* file_name);
+int draw_text(int x,int y,char *s,int colour);
 
 char *png_file=NULL;
 
@@ -146,13 +148,11 @@ int update_image(void)
       float slope=1.0*(y-lasty)/(x1-x);
 
       if (i>-179) {
-	int thelasty=y;       
 	int base=lasty;
 	for(int xx=x;xx<x1;xx++) {
 	  int they=base+slope*(xx-x);
 	  for(int yy=they;yy<they+3;yy++)
 	    frame[yy][xx*4+chan]=0xff;
-	  thelasty=they;
 	}
 	lasty=y;
       }
@@ -166,7 +166,6 @@ int update_image(void)
     int ylo=1*MAXY/4;
     int yhi=2*MAXY/4;
 
-    int lasty=-1;
     for(int i=-(duration+1);i<=0;i++) {
       int sample=head+i;
       if (sample<0) sample+=86400;
@@ -191,8 +190,6 @@ int update_image(void)
 	       minx,recent_data[sample][0],maxx,
 	       y,x,x1);
       if (y<0||y>MAXY) y=(ylo+yhi)/2;
-
-      float slope=1.0*(y-lasty)/(x1-x);
 
       // Draw pixels
       frame[y][x*4+chan]=0xff;
@@ -206,7 +203,6 @@ int update_image(void)
     int ylo=2*MAXY/4;
     int yhi=3*MAXY/4;
 
-    int lasty=-1;
     for(int i=-(duration+1);i<=0;i++) {
       int sample=head+i;
       if (sample<0) sample+=86400;
@@ -231,8 +227,6 @@ int update_image(void)
 	       minx,recent_data[sample][0],maxx,
 	       y,x,x1);
       if (y<0||y>MAXY) y=(ylo+yhi)/2;
-
-      float slope=1.0*(y-lasty)/(x1-x);
 
       // Draw pixels
       frame[y][x*4+chan]=0xff;
@@ -280,13 +274,11 @@ int update_image(void)
       float slope=1.0*(y-lasty)/(x1-x);
 
       if (i>(-duration)) {
-	int thelasty=y;       
 	int base=lasty;
 	for(int xx=x;xx<x1;xx++) {
 	  int they=base+slope*(xx-x);
 	  for(int yy=they;yy<they+3;yy++)
 	    frame[yy][xx*4+chan]=0xff;
-	  thelasty=they;
 	}
 	lasty=y;
       }
@@ -341,8 +333,8 @@ int main(int argc,char **argv)
   time_t last_time=0;
 
   
-  if (argc!=3) {
-    fprintf(stderr,"usage: continuous-graph <serial port> <png file>\n");
+  if (argc!=4) {
+    fprintf(stderr,"usage: continuous-graph <serial port> <png file> <font file>\n");
     exit(-3);
   }
 
@@ -354,6 +346,8 @@ int main(int argc,char **argv)
 
   printf("Setting up serial port.\n");
   serial_setup_port_with_speed(seismo,38400);
+
+  read_png_file(argv[3]);
   
   
   char line[1024];
@@ -459,8 +453,8 @@ void read_png_file(char* file_name)
   if (infile == NULL)
     abort_("[read_png_file] File %s could not be opened for reading", file_name);
 
-  fread(header, 1, 8, infile);
-  if (png_sig_cmp(header, 0, 8))
+  int r=fread(header, 1, 8, infile);
+  if ((r<8)||png_sig_cmp(header, 0, 8))
     abort_("[read_png_file] File %s is not recognized as a PNG file", file_name);
 
   /* initialize stuff */
@@ -510,4 +504,40 @@ void read_png_file(char* file_name)
   }
 
   printf("Input-file is read and now closed\n");
+}
+
+int draw_char(int x,int y,int c,int colour)
+{
+  for(int xx=0;xx<16;xx++)
+    for(int yy=0;yy<16;yy++)
+      {
+	if (row_pointers[c/8+(yy/2)][xx/2]) {
+	  frame[y+yy][(x+xx)*4+0]=(colour>>0)&0xff;
+	  frame[y+yy][(x+xx)*4+1]=(colour>>8)&0xff;
+	  frame[y+yy][(x+xx)*4+2]=(colour>>16)&0xff;
+
+	}
+      }
+  return 0;
+}
+
+int draw_text(int x,int y,char *s,int colour)
+{
+  int xx=x,yy=y;
+  for(int i=0;s[i];i++) {
+    switch(s[i]) {
+    case '\r':
+      xx=0;
+      break;
+    case '\n':
+      yy+=16;
+      break;
+    default:
+      draw_char(xx,yy,s[i],colour);
+      xx+=16; if (xx>=MAXX) { xx=0; yy+=16; }
+      if (yy>MAXY) yy=0;
+      break;
+    }
+  }
+  return 0;
 }
