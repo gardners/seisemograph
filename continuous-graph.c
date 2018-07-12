@@ -72,15 +72,17 @@ int update_image(void)
       }
       
       int y=ylo+1.0*(recent_data[sample][chan]-min)*(yhi-ylo)/range;
-      if (y)
-	printf("ylo=%d, yhi=%d, scale=%f, min,data,max=%d,%d,%d, scaled=%d\n",
+      if (0) 
+	printf("ylo=%d, yhi=%d, scale=%f, min,data,max=%d,%d,%d, scaled=%d, x=%d, x1=%d\n",
 	       ylo,yhi,1.0*(yhi-ylo)/range,
 	       minx,recent_data[sample][0],maxx,
-	       y);
+	       y,x,x1);
       if (y<0||y>MAXY) y=(ylo+yhi)/2;
 
       // Draw pixels
-      for(;x<x1;x+=4) frame[y][x+chan]=0xff;
+      for(int xx=x;xx<x1;xx++)
+	for(int yy=0;yy<4;yy++)
+	  frame[y+yy][xx*4+chan]=0xff;
       
     }
     
