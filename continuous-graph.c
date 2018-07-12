@@ -134,8 +134,8 @@ int update_image(void)
       int x1=MAXX+(i+1)*MAXX/180;
       if (x>=MAXX) x=MAXX-1;
       if (x1<0) x1=0;
-      int ylo=0;
-      int yhi=MAXY/4;
+      int ylo=0+16;
+      int yhi=MAXY/4-16;
       int min;
       int range=0;
       switch(chan) {
@@ -172,8 +172,8 @@ int update_image(void)
   // Draw 3 hour log
   for(int chan=0;chan<3;chan++) {
     int duration=3600*3;
-    int ylo=1*MAXY/4;
-    int yhi=2*MAXY/4;
+    int ylo=1*MAXY/4+16;
+    int yhi=2*MAXY/4-16;
 
     for(int i=-(duration+1);i<=0;i++) {
       int sample=head+i;
@@ -209,8 +209,8 @@ int update_image(void)
   // Draw 24 hour log
   for(int chan=0;chan<3;chan++) {
     int duration=86400;
-    int ylo=2*MAXY/4;
-    int yhi=3*MAXY/4;
+    int ylo=2*MAXY/4+16;
+    int yhi=3*MAXY/4-16;
 
     for(int i=-(duration+1);i<=0;i++) {
       int sample=head+i;
@@ -255,8 +255,8 @@ int update_image(void)
   
   for(int chan=0;chan<3;chan++) {
     int duration=300;
-    int ylo=3*MAXY/4;
-    int yhi=4*MAXY/4;
+    int ylo=3*MAXY/4+16;
+    int yhi=4*MAXY/4-16;
 
     int lasty=-1;
     for(int i=-(duration+2);i<=0;i++) {
