@@ -42,10 +42,10 @@ int update_image(void)
 {
   int x,y;
   
-  // Clear PNG output frame (make all white)
-  for(y=0;y<MAXY;y++)
+  // Clear PNG output frame (make all black, but with alpha)
+  for(y=0;y<MAXY;y++)    
     for(x=0;x<MAXX*4;x++)
-      frame[y][x]=0xff;
+      if ((x&3)==3) frame[y][x]=0xff; else frame[y][x]=0x00;
 
   // Work out most recent sample
   int head=time(0)%MAX_HISTORY;
@@ -58,13 +58,16 @@ int update_image(void)
     // Work out pixel translation
     int x=MAXX+i*MAXX/180;
     int x1=MAXX+(i+1)*MAXX/180;
+    if (x>=MAXX) x=MAXX-1;
+    if (x1<0) x1=0;
     int ylo=0;
     int yhi=MAXY/3;
     for(int chan=0;chan<3;chan++) {
       int y=ylo+1.0*recent_data[sample][chan]*(yhi-ylo)/(maxy-miny);
+      if (y<0||y>MAXY) y=(ylo+yhi)/2;
 
       // Draw pixels
-      for(;x<x1;x+=4) frame[y][x+chan]=0x00;
+      for(;x<x1;x+=4) frame[y][x+chan]=0xff;
       
     }
     
@@ -196,13 +199,8 @@ void write_image(char *filename)
 
   png_write_info(png,info);
 
-  for(y=0;y<maxy;y++) {
+  for(y=0;y<MAXY;y++) {
     png_write_row(png,frame[y]);
-  }
-  unsigned char empty_row[MAXX*4];
-  bzero(empty_row,sizeof(empty_row));
-  for(;y<MAXY;y++) {
-    png_write_row(png,empty_row);
   }
 
   png_write_end(png,info);
