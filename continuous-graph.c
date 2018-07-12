@@ -16,8 +16,8 @@
 #define PNG_DEBUG 3
 #include <png.h>
 
-#define MAXX 1920
-#define MAXY 1200
+#define MAXX 1024
+#define MAXY 768
 unsigned char frame[MAXY][MAXX*4];
 
 // X,Y,Z samples every second
@@ -51,19 +51,20 @@ int update_image(void)
   int head=time(0)%MAX_HISTORY;
 
   // Draw 3 minute second-by-second log
-  for(int i=-179;i<=0;i++) {
-    int sample=head+i;
-    if (sample<0) sample+=86400;
-    
-    // Work out pixel translation
-    int x=MAXX+i*MAXX/180;
-    int x1=MAXX+(i+1)*MAXX/180;
-    if (x>=MAXX) x=MAXX-1;
-    if (x1<0) x1=0;
-    int ylo=0;
-    int yhi=MAXY/3;
-    int min;
-    for(int chan=0;chan<3;chan++) {
+  for(int chan=0;chan<3;chan++) {
+    int lasty=-1;
+    for(int i=-179;i<=0;i++) {
+      int sample=head+i;
+      if (sample<0) sample+=86400;
+      
+      // Work out pixel translation
+      int x=MAXX+i*MAXX/180;
+      int x1=MAXX+(i+1)*MAXX/180;
+      if (x>=MAXX) x=MAXX-1;
+      if (x1<0) x1=0;
+      int ylo=0;
+      int yhi=MAXY/3;
+      int min;
       int range=0;
       switch(chan) {
       case 0: range=maxx-minx; min=minx; break;
@@ -79,11 +80,25 @@ int update_image(void)
 	       y,x,x1);
       if (y<0||y>MAXY) y=(ylo+yhi)/2;
 
-      // Draw pixels
-      for(int xx=x;xx<x1;xx++)
-	for(int yy=0;yy<4;yy++)
-	  frame[y+yy][xx*4+chan]=0xff;
-      
+      float slope=1.0*(y-lasty)/(x1-x);
+
+      if (1) {
+	int thelasty=y;
+	int base=lasty;
+	for(int xx=x;xx<x1;xx++) {
+	  int they=base+slope*(xx-x);
+	  for(int yy=thelasty;yy<they+3;yy++)
+	    frame[yy][xx*4+chan]=0xff;
+	  thelasty=they;
+	}
+      }
+      else {
+	// Draw pixels
+	for(int xx=x;xx<x1;xx++)
+	  for(int yy=0;yy<4;yy++)
+	    frame[y+yy][xx*4+chan]=0xff;
+      }
+      lasty=y;
     }
     
   }
