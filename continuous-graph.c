@@ -383,6 +383,7 @@ int main(int argc,char **argv)
   while(1) {
     unsigned char buf[1024];
     int r=read_nonblock(seismo,buf,1024);
+    if (r<1) usleep(10000);
     if (r>0) {
       if (0) {
 	//	printf("%d bytes read.\n",r);
