@@ -48,6 +48,12 @@ int number_of_passes;
 png_bytep * row_pointers;
 FILE *infile;
 
+float absf(float f)
+{
+  if (f<0) return -f;
+  return f;
+}
+
 int update_image(void)
 {
   int x,y;
@@ -61,9 +67,9 @@ int update_image(void)
   int head=time(0)%MAX_HISTORY;
 
   // Find recent major excursions
-  int maxxdelta=0;
-  int maxydelta=0;
-  int maxzdelta=0;
+  float maxxdelta=0;
+  float maxydelta=0;
+  float maxzdelta=0;
   int maxpoint=-1;
 
 #define MAX_EXCURSIONS 10
@@ -73,27 +79,35 @@ int update_image(void)
   for(int s=0;s<MAX_HISTORY;s++) {
     int sn=head-s;
     if (sn<0) sn+=MAX_HISTORY;
-    int xdelta=abs(recent_data[sn][0]-meanx);
-    int ydelta=abs(recent_data[sn][1]-meany);
-    int zdelta=abs(recent_data[sn][2]-meanz);
-    if (xdelta>maxxdelta||ydelta>maxydelta||zdelta>maxzdelta) {
-      maxxdelta=xdelta;
-      maxydelta=ydelta;
-      maxzdelta=zdelta;
+    if (recent_data[sn][0]) {
+      float xdelta=absf((recent_data[sn][0]-minx)*1.0/meanx);
+      float ydelta=absf((recent_data[sn][1]-miny)*1.0/meany);
+      float zdelta=absf((recent_data[sn][2]-minz)*1.0/meanz);
+      if (0) printf("sn=%d, sample=%d,%d,%d, deltas=%f,%f,%f\n",
+		    sn,
+		    recent_data[sn][0],
+		    recent_data[sn][1],
+		    recent_data[sn][2],
+		    xdelta,ydelta,zdelta);
+      if ((xdelta>maxxdelta)||(ydelta>maxydelta)||(zdelta>maxzdelta)) {
+	
+	if ((maxpoint>-1)&&
+	    (((sn-maxpoint)>500)
+	     ||((maxpoint-sn)>500))
+	    ) {
+	  // We are replacing recent excursion(s)
+	  for(int i=MAX_EXCURSIONS-1;i>0;i--)
+	    recent_excursions[i]=recent_excursions[i-1];
+	  if (recent_excursion_count<MAX_EXCURSIONS)
+	    recent_excursion_count++;
+	  recent_excursions[0]=maxpoint;
+	}
 
-      if ((maxpoint>-1)&&
-	  (((sn-maxpoint)>500)
-	   ||((maxpoint-sn)>500))
-	  ) {
-	// We are replacing recent excursion(s)
-	for(int i=MAX_EXCURSIONS-1;i>0;i--)
-	  recent_excursions[i]=recent_excursions[i-1];
-	if (recent_excursion_count<MAX_EXCURSIONS)
-	  recent_excursion_count++;
-	recent_excursions[0]=maxpoint;
+	maxxdelta=xdelta;
+	maxydelta=ydelta;
+	maxzdelta=zdelta;
+	maxpoint=sn;
       }
-      
-      maxpoint=sn;
     }
   }
   
@@ -181,9 +195,7 @@ int update_image(void)
       float slope=1.0*(y-lasty)/(x1-x);
 
       // Draw pixels
-      for(int xx=x;xx<x1;xx++)
-	for(int yy=0;yy<4;yy++)
-	  frame[y+yy][xx*4+chan]=0xff;
+      frame[y][x*4+chan]=0xff;
     }
     
   }
@@ -223,23 +235,23 @@ int update_image(void)
       float slope=1.0*(y-lasty)/(x1-x);
 
       // Draw pixels
-      for(int xx=x;xx<x1;xx++)
-	for(int yy=0;yy<4;yy++)
-	  frame[y+yy][xx*4+chan]=0xff;
+      frame[y][x*4+chan]=0xff;
     }
     
   }
   
   // Draw most recent excursion, starting 30 seconds before
-  head=maxpoint-30;
+  printf("Drawing excursion from T-%dsec\n",
+	 head-maxpoint);
   for(int chan=0;chan<3;chan++) {
     int duration=300;
     int ylo=3*MAXY/4;
     int yhi=4*MAXY/4;
 
     int lasty=-1;
-    for(int i=-(duration+1);i<=0;i++) {
-      int sample=head+i;
+    for(int i=-(duration+2);i<=0;i++) {
+      //  Place max point 30 seconds from left
+      int sample=head+(maxpoint-head)+(duration-60)+i;
       if (sample<0) sample+=86400;
       
       // Work out pixel translation
@@ -263,12 +275,21 @@ int update_image(void)
 	       y,x,x1);
       if (y<0||y>MAXY) y=(ylo+yhi)/2;
 
+      if (!lasty||(lasty==-1)) lasty=y;
+
       float slope=1.0*(y-lasty)/(x1-x);
 
-      // Draw pixels
-      for(int xx=x;xx<x1;xx++)
-	for(int yy=0;yy<4;yy++)
-	  frame[y+yy][xx*4+chan]=0xff;
+      if (i>(-duration)) {
+	int thelasty=y;       
+	int base=lasty;
+	for(int xx=x;xx<x1;xx++) {
+	  int they=base+slope*(xx-x);
+	  for(int yy=they;yy<they+3;yy++)
+	    frame[yy][xx*4+chan]=0xff;
+	  thelasty=they;
+	}
+	lasty=y;
+      }
     }
     
   }
@@ -282,15 +303,15 @@ int process_line(char *line)
 {
   int e,n,v,x,y,z;
 
-  if (line[0])  printf("Read '%s'\n",line);
+  //  if (line[0])  printf("Read '%s'\n",line);
   
   if (sscanf(line,"Minimum %d %d %d %d %d %d",
 	     &e,&n,&v,&minx,&miny,&minz)==6) {
-    printf("Read minimums\n");
+    // printf("Read minimums\n");
   }
   if (sscanf(line,"Maximum %d %d %d %d %d %d",
 	     &e,&n,&v,&maxx,&maxy,&maxz)==6) {
-    printf("Read maximums %d %d %d\n",maxx,maxy,maxz);
+    // printf("Read maximums %d %d %d\n",maxx,maxy,maxz);
   }
   sscanf(line,"Mean %d %d %d %d %d %d",
 	 &e,&n,&v,&meanx,&meany,&meanz);
