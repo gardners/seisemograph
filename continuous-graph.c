@@ -62,8 +62,21 @@ int update_image(void)
     if (x1<0) x1=0;
     int ylo=0;
     int yhi=MAXY/3;
+    int min;
     for(int chan=0;chan<3;chan++) {
-      int y=ylo+1.0*recent_data[sample][chan]*(yhi-ylo)/(maxy-miny);
+      int range=0;
+      switch(chan) {
+      case 0: range=maxx-minx; min=minx; break;
+      case 1: range=maxy-miny; min=miny; break;
+      case 2: range=maxz-minz; min=minz; break;
+      }
+      
+      int y=ylo+1.0*(recent_data[sample][chan]-min)*(yhi-ylo)/range;
+      if (y)
+	printf("ylo=%d, yhi=%d, scale=%f, min,data,max=%d,%d,%d, scaled=%d\n",
+	       ylo,yhi,1.0*(yhi-ylo)/range,
+	       minx,recent_data[sample][0],maxx,
+	       y);
       if (y<0||y>MAXY) y=(ylo+yhi)/2;
 
       // Draw pixels
@@ -82,10 +95,14 @@ int process_line(char *line)
 
   if (line[0])  printf("Read '%s'\n",line);
   
-  sscanf(line,"Minimum %d %d %d %d %d %d",
-	 &e,&n,&v,&minx,&miny,&minz);
-  sscanf(line,"Maximum %d %d %d %d %d %d",
-	 &e,&n,&v,&maxx,&maxy,&maxz);
+  if (sscanf(line,"Minimum %d %d %d %d %d %d",
+	     &e,&n,&v,&minx,&miny,&minz)==6) {
+    printf("Read minimums\n");
+  }
+  if (sscanf(line,"Maximum %d %d %d %d %d %d",
+	     &e,&n,&v,&maxx,&maxy,&maxz)==6) {
+    printf("Read maximums %d %d %d\n",maxx,maxy,maxz);
+  }
   sscanf(line,"Mean %d %d %d %d %d %d",
 	 &e,&n,&v,&meanx,&meany,&meanz);
   
