@@ -77,7 +77,9 @@ int update_image(void)
 #define MAX_EXCURSIONS 10
   int recent_excursions[MAX_EXCURSIONS];
   int recent_excursion_count=0;
-    
+
+  draw_text(100,100,"Test",0xffffff);
+  
   for(int s=0;s<MAX_HISTORY;s++) {
     int sn=head-s;
     if (sn<0) sn+=MAX_HISTORY;
@@ -511,7 +513,7 @@ int draw_char(int x,int y,int c,int colour)
   for(int xx=0;xx<16;xx++)
     for(int yy=0;yy<16;yy++)
       {
-	if (row_pointers[c/8+(yy/2)][xx/2]) {
+	if (row_pointers[(c*8)+(yy/2)][(xx/2)*4]) {
 	  frame[y+yy][(x+xx)*4+0]=(colour>>0)&0xff;
 	  frame[y+yy][(x+xx)*4+1]=(colour>>8)&0xff;
 	  frame[y+yy][(x+xx)*4+2]=(colour>>16)&0xff;
