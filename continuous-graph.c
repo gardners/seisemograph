@@ -72,6 +72,7 @@ int update_image(void)
   float maxxdelta=0;
   float maxydelta=0;
   float maxzdelta=0;
+  float maxdelta=0;
   int maxpoint=-1;
 
 #define MAX_EXCURSIONS 10
@@ -94,13 +95,14 @@ int update_image(void)
       float xdelta=absf((recent_data[sn][0]-minx)*1.0/meanx);
       float ydelta=absf((recent_data[sn][1]-miny)*1.0/meany);
       float zdelta=absf((recent_data[sn][2]-minz)*1.0/meanz);
+      float delta=xdelta+ydelta+zdelta;
       if (0) printf("sn=%d, sample=%d,%d,%d, deltas=%f,%f,%f\n",
 		    sn,
 		    recent_data[sn][0],
 		    recent_data[sn][1],
 		    recent_data[sn][2],
 		    xdelta,ydelta,zdelta);
-      if ((xdelta>maxxdelta)||(ydelta>maxydelta)||(zdelta>maxzdelta)) {
+      if (delta>maxdelta) {
 	
 	if ((maxpoint>-1)&&
 	    (((sn-maxpoint)>500)
@@ -114,9 +116,7 @@ int update_image(void)
 	  recent_excursions[0]=maxpoint;
 	}
 
-	maxxdelta=xdelta;
-	maxydelta=ydelta;
-	maxzdelta=zdelta;
+      maxdelta=delta;
 	maxpoint=sn;
       }
     }
@@ -312,7 +312,7 @@ int process_line(char *line)
   int e,n,v,x,y,z;
 
   //  if (line[0])  printf("Read '%s'\n",line);
-  
+
   if (sscanf(line,"Minimum %d %d %d %d %d %d",
 	     &e,&n,&v,&minx,&miny,&minz)==6) {
     // printf("Read minimums\n");
@@ -338,7 +338,8 @@ int process_line(char *line)
     
     
     update_image();
-    write_image(png_file);
+    write_image("/tmp/tmp.png");
+    rename("/tmp/tmp.png",png_file);
     
   }
   return 0;
@@ -392,7 +393,13 @@ int main(int argc,char **argv)
       }
       for(int i=0;i<r;i++)
 	if (buf[i]=='\r'||buf[i]=='\n') {
-	  line[len]=0; process_line(line); line[0]=0; len=0;
+	  line[len]=0;
+	  process_line(line);
+	  line[0]=0;
+	  len=0;
+	  // Check if freewave box has just been rebooted
+	  if (strstr(line,"accept")) write_all(seismo,"a\r",2);
+  
 	} else
 	  line[len++]=buf[i];
     }
