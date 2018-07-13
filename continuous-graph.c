@@ -30,6 +30,8 @@ unsigned long black,white, red, green, blue;
 #define MAXY 400
 unsigned char frame[MAXY][MAXX*4];
 
+int frame_count=0;
+
 // X,Y,Z samples every second
 #define MAX_HISTORY 86400
 unsigned int recent_data[MAX_HISTORY][3];
@@ -448,9 +450,13 @@ int process_line(char *line)
     
     
     update_image();
-    write_image("/tmp/tmp.png");
-    rename("/tmp/tmp.png",png_file);
-    
+    frame_count++;
+    if (frame_count==60) 
+      {
+	write_image("/tmp/tmp.png");
+	rename("/tmp/tmp.png",png_file);
+	frame_count=0;
+      } else frame_count++;
   }
   return 0;
 }
