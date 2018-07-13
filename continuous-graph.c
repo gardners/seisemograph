@@ -11,10 +11,20 @@
 #include <assert.h>
 #include <fcntl.h>
 #include <time.h>
+#include <X11/Xlib.h>
+#include <X11/Xutil.h>
+#include <X11/Xos.h>
+
 #include <sys/time.h>
 
 #define PNG_DEBUG 3
 #include <png.h>
+
+Display *dis;
+int screen;
+Window win;
+GC gc;
+unsigned long black,white;
 
 #define MAXX 1920
 #define MAXY 1200
@@ -49,6 +59,61 @@ png_infop info_ptr;
 int number_of_passes;
 png_bytep * row_pointers;
 FILE *infile;
+
+int x11_handler(Display *d, XErrorEvent *e)
+{
+  printf("Error for display %x\n");  
+  return 0;
+}
+
+void init_x() {
+  /* get the colors black and white (see section for details) */
+
+  /* use the information from the environment variable DISPLAY 
+     to create the X connection:
+  */	
+  dis=XOpenDisplay(":0");
+  screen=DefaultScreen(dis);
+  black=BlackPixel(dis,screen);	/* get color black */
+  white=WhitePixel(dis, screen);  /* get color white */
+
+  XSetErrorHandler(x11_handler);
+  
+  /* once the display is initialized, create the window.
+     This window will be have be 200 pixels across and 300 down.
+     It will have the foreground white and background black
+  */
+  win=XCreateSimpleWindow(dis,RootWindow(dis,screen),
+			  0,0,	
+			  MAXX,MAXY,
+			  1, white,
+			  black);
+  
+  /* here is where some properties of the window can be set.
+     The third and fourth items indicate the name which appears
+     at the top of the window and the name of the minimized window
+     respectively.
+  */
+  XSetStandardProperties(dis,win,"XSeismo","XSeismo",None,NULL,0,NULL);
+
+  /* this routine determines which types of input are allowed in
+	   the input.  see the appropriate section for details...
+  */
+  XSelectInput(dis, win, ExposureMask);
+  
+  /* create the Graphics Context */
+  gc=XCreateGC(dis, win, 0,0);        
+  
+  /* here is another routine to set the foreground and background
+     colors _currently_ in use in the window.
+  */
+  XSetBackground(dis,gc,black);
+  XSetForeground(dis,gc,white);
+  
+  /* clear the window and bring it on top of the other windows */
+  XClearWindow(dis, win);
+  XMapWindow(dis, win);
+};
 
 float absf(float f)
 {
@@ -351,7 +416,6 @@ int main(int argc,char **argv)
 {
   time_t last_time=0;
 
-  
   if (argc!=4) {
     fprintf(stderr,"usage: continuous-graph <serial port> <png file> <font file>\n");
     exit(-3);
@@ -373,6 +437,8 @@ int main(int argc,char **argv)
 
   printf("Clearing data...\n");
 
+  init_x();  
+  
   // Clear data history also
   int x,y;
   for(x=0;x<MAX_HISTORY;x++) {
@@ -384,6 +450,12 @@ int main(int argc,char **argv)
   line[0]=0;
   int len=0;
   while(1) {
+    XEvent e;
+    XNextEvent(dis, &e);
+    if (e.type == Expose) 
+      {
+	printf("Expose event\n");
+      }
     unsigned char buf[1024];
     int r=read_nonblock(seismo,buf,1024);
     if (r<1) usleep(10000);
