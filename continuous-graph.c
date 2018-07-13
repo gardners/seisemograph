@@ -24,10 +24,10 @@ Display *dis;
 int screen;
 Window win;
 GC gc;
-unsigned long black,white;
+unsigned long black,white, red, green, blue;
 
-#define MAXX 1920
-#define MAXY 1200
+#define MAXX 1000
+#define MAXY 400
 unsigned char frame[MAXY][MAXX*4];
 
 // X,Y,Z samples every second
@@ -62,7 +62,7 @@ FILE *infile;
 
 int x11_handler(Display *d, XErrorEvent *e)
 {
-  printf("Error for display %x\n");  
+  printf("Error with display\n");  
   return 0;
 }
 
@@ -76,6 +76,16 @@ void init_x() {
   screen=DefaultScreen(dis);
   black=BlackPixel(dis,screen);	/* get color black */
   white=WhitePixel(dis, screen);  /* get color white */
+  XColor tmp;
+  XParseColor(dis, DefaultColormap(dis,screen), "red", &tmp);
+  XAllocColor(dis,DefaultColormap(dis,screen),&tmp);
+  red=tmp.pixel;
+  XParseColor(dis, DefaultColormap(dis,screen), "green", &tmp);
+  XAllocColor(dis,DefaultColormap(dis,screen),&tmp);
+  green=tmp.pixel;
+  XParseColor(dis, DefaultColormap(dis,screen), "blue", &tmp);
+  XAllocColor(dis,DefaultColormap(dis,screen),&tmp);
+  blue=tmp.pixel;
 
   XSetErrorHandler(x11_handler);
   
@@ -121,6 +131,17 @@ float absf(float f)
   return f;
 }
 
+int x_setcol(int colour)
+{
+  int xcol=white;
+  if (colour==0xffffff) xcol=white;
+  if (colour==0xff0000) xcol=blue;
+  if (colour==0x00ff00) xcol=green;
+  if (colour==0x0000ff) xcol=red;
+  XSetForeground(dis,gc,xcol);
+  return 0;
+}
+
 int update_image(void)
 {
   int x,y;
@@ -129,6 +150,10 @@ int update_image(void)
   for(y=0;y<MAXY;y++)    
     for(x=0;x<MAXX*4;x++)
       if ((x&3)==3) frame[y][x]=0xff; else frame[y][x]=0x00;
+  
+  XSetBackground(dis,gc,white);
+  XSetForeground(dis,gc,black);
+  XFillRectangle(dis,win,gc,0,0,MAXX,MAXY);
 
   // Work out most recent sample
   int head=time(0)%MAX_HISTORY;
@@ -225,8 +250,13 @@ int update_image(void)
 	int base=lasty;
 	for(int xx=x;xx<x1;xx++) {
 	  int they=base+slope*(xx-x);
-	  for(int yy=they;yy<they+3;yy++)
+	  for(int yy=they;yy<they+3;yy++) {
 	    frame[yy][xx*4+chan]=0xff;
+	    x_setcol((frame[yy][xx*4+0]<<0)
+		     +(frame[yy][xx*4+1]<<8)
+		     +(frame[yy][xx*4+2]<<16));
+	    XDrawPoint(dis,win,gc,yy,xx*4);
+	  }
 	}
 	lasty=y;
       }
@@ -267,6 +297,10 @@ int update_image(void)
 
       // Draw pixels
       frame[y][x*4+chan]=0xff;
+      x_setcol((frame[y][x*4+0]<<0)
+	       +(frame[y][x*4+1]<<8)
+	       +(frame[y][x*4+2]<<16));
+      XDrawPoint(dis,win,gc,y,x*4);
     }
     
   }
@@ -304,6 +338,10 @@ int update_image(void)
 
       // Draw pixels
       frame[y][x*4+chan]=0xff;
+      x_setcol((frame[y][x*4+0]<<0)
+	       +(frame[y][x*4+1]<<8)
+	       +(frame[y][x*4+2]<<16));
+      XDrawPoint(dis,win,gc,y,x*4);
     }
     
   }
@@ -360,8 +398,13 @@ int update_image(void)
 	int base=lasty;
 	for(int xx=x;xx<x1;xx++) {
 	  int they=base+slope*(xx-x);
-	  for(int yy=they;yy<they+3;yy++)
+	  for(int yy=they;yy<they+3;yy++) {
 	    frame[yy][xx*4+chan]=0xff;
+	    x_setcol((frame[yy][xx*4+0]<<0)
+		      +(frame[yy][xx*4+1]<<8)
+			+(frame[yy][xx*4+2]<<16));
+	    XDrawPoint(dis,win,gc,yy,xx*4);
+	  }
 	}
 	lasty=y;
       }
@@ -606,6 +649,8 @@ void read_png_file(char* file_name)
 
 int draw_char(int x,int y,int c,int colour)
 {
+  x_setcol(colour);
+  
   for(int xx=0;xx<16;xx++)
     for(int yy=0;yy<16;yy++)
       {
@@ -614,6 +659,7 @@ int draw_char(int x,int y,int c,int colour)
 	  frame[y+yy][(x+xx)*4+1]=(colour>>8)&0xff;
 	  frame[y+yy][(x+xx)*4+2]=(colour>>16)&0xff;
 
+	  XDrawPoint(dis,win,gc,x+xx,y+yy);
 	}
       }
   return 0;
