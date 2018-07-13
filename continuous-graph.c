@@ -257,7 +257,7 @@ int update_image(void)
 	    x_setcol((frame[yy][xx*4+0]<<0)
 		     +(frame[yy][xx*4+1]<<8)
 		     +(frame[yy][xx*4+2]<<16));
-	    XDrawPoint(dis,win,gc,yy,xx*4);
+	    XDrawPoint(dis,win,gc,xx,yy);
 	  }
 	}
 	lasty=y;
@@ -302,7 +302,7 @@ int update_image(void)
       x_setcol((frame[y][x*4+0]<<0)
 	       +(frame[y][x*4+1]<<8)
 	       +(frame[y][x*4+2]<<16));
-      XDrawPoint(dis,win,gc,y,x*4);
+      XDrawPoint(dis,win,gc,x,y);
     }
     
   }
@@ -343,7 +343,7 @@ int update_image(void)
       x_setcol((frame[y][x*4+0]<<0)
 	       +(frame[y][x*4+1]<<8)
 	       +(frame[y][x*4+2]<<16));
-      XDrawPoint(dis,win,gc,y,x*4);
+      XDrawPoint(dis,win,gc,x,y);
     }
     
   }
@@ -405,7 +405,7 @@ int update_image(void)
 	    x_setcol((frame[yy][xx*4+0]<<0)
 		      +(frame[yy][xx*4+1]<<8)
 			+(frame[yy][xx*4+2]<<16));
-	    XDrawPoint(dis,win,gc,yy,xx*4);
+	    XDrawPoint(dis,win,gc,xx,yy);
 	  }
 	}
 	lasty=y;
@@ -504,6 +504,7 @@ int main(int argc,char **argv)
     if (e.type == Expose) 
       {
 	printf("Expose event\n");
+	update_image();
       }
     unsigned char buf[1024];
     int r=read_nonblock(seismo,buf,1024);
