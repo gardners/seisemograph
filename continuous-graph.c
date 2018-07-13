@@ -244,13 +244,15 @@ int update_image(void)
   }
   
   // Draw most recent excursion, starting 30 seconds before
+  int time_delta=head-maxpoint;
+  if (time_delta<0) time_delta+=MAX_HISTORY;
   printf("Drawing excursion from T-%dsec\n",
-	 head-maxpoint);
+	 time_delta);
   char recent_msg[1024];
   snprintf(recent_msg,1024,"Most significant trace in last 24 hours (peak %02d:%02d.%02d ago)",
-	   (head-maxpoint)/3600,
-	   ((head-maxpoint)/60)%60,
-	   (head-maxpoint)%60);
+	   (time_delta)/3600,
+	   ((time_delta)/60)%60,
+	   (time_delta)%60);
   draw_text(64,0+3*MAXY/4,recent_msg,0xffffff);
   
   for(int chan=0;chan<3;chan++) {
