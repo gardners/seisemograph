@@ -103,7 +103,7 @@ int update_image(void)
 		    recent_data[sn][2],
 		    xdelta,ydelta,zdelta);
       if (delta>maxdelta) {
-	
+	// printf("sn=%d, delta=%f, maxdelta=%f\n",sn,delta,maxdelta);
 	if ((maxpoint>-1)&&
 	    (((sn-maxpoint)>500)
 	     ||((maxpoint-sn)>500))
