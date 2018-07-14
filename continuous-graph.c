@@ -26,8 +26,8 @@ Window win;
 GC gc;
 unsigned long black,white, red, green, blue;
 
-#define MAXX 1750
-#define MAXY 1100
+#define MAXX (1920-64)
+#define MAXY (1200-32)
 unsigned char frame[MAXY][MAXX*4];
 
 int frame_count=0;
