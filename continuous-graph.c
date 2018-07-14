@@ -500,11 +500,12 @@ int main(int argc,char **argv)
   int len=0;
   while(1) {
     XEvent e;
-    XNextEvent(dis, &e);
-    if (e.type == Expose) 
-      {
-	printf("Expose event\n");
-	update_image();
+    if (XCheckWindowEvent(dis, win, ExposureMask, &e)) {
+	if (e.type == Expose) 
+	  {
+	    printf("Expose event\n");
+	    update_image();
+	  }
       }
     unsigned char buf[1024];
     int r=read_nonblock(seismo,buf,1024);
