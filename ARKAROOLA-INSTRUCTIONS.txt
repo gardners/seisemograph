@@ -1,0 +1,17 @@
+1. Power on the laptop using the power button.  
+   It can take upto 5 minutes to boot.  
+   You should see a strip of icons down the left of the external monitor.
+   If you instead see a login prompt, the username and password are both arkaroola.
+2. When you can see the desktop with the icons down the left, there should also be
+   an icon on the desktop called seismo.  Double click that to start.
+
+You should not need to do anything else, and the seismo display should start.
+There is a bit of a blink each time it updates, which should be once per second.
+
+If you want to save a copy of the current display, a PNG image file gets written
+once per minute to /tmp/seismo.png. You can insert a USB memory stick and use the
+file manager to copy this.
+
+If the computer freezes, you may need to hold the power button until the power light goes
+off, and then start the instructions from the top again.
+
